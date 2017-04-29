@@ -23,10 +23,12 @@
   <div class="a aa">aaa</div>
   <div class="a bb">aaa</div>
   <div class="a cc">aaa</div>
-  <!-- <div id="b"></div> -->
+  <div id="id">id</div>
 </body>
 <script src="myjQuery.js"></script>
 <script>
-console.log($$('.bb'))
+$$(function(){
+  $$('.aa').hasClass('.a')
+})
 </script>
 </html>
