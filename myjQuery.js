@@ -41,7 +41,6 @@
 
           return this;
         }else if(myjQuery.isFunction(math)){
-          // console.log(myjQuery.isFunction(math))
           // 匹配：函数
           this.ready(math)
         }
@@ -82,7 +81,6 @@
       // 节点className排除前后空格
       var reg = new RegExp('(\\s|^)' + cls + '(\\s|$)');
       for (var i = 0; i < this.length; i++) {
-        console.log(reg.test(this[i].className))
         if (!reg.test(this[i].className)) {
           return false;
           break;
@@ -117,39 +115,26 @@
     // 获取或添加元素样式
     css: function(attr, val){
       if (!attr) return;
-
       for (var i = 0; i < this.length; i++) {
-        if (typeof attr !== 'string' && !val) {
-          // 传入对象形式例如：{top:0, left:0}
-          for(var ii in attr){
-            this[i].style[ii] = attr[ii];
+        if (myjQuery.isType(attr, 'string')) {
+          if (!val) {
+            console.log(w.getComputedStyle(this[i])[attr])
+            return w.getComputedStyle(this[i])[attr];
           }
-        } else if (typeof attr === 'string' && !val) {
-          // 获取元素单个样式
-          w.getComputedStyle(this[i])[attr];
-        } else {
-          // 设置元素单个样式
           this[i].style[attr] = val;
+        }else{
+          var _this = this[i];
+          // 传入对象形式例如：{top:0, left:0}
+          myjQuery.each(attr, function(v, i){
+            _this.style.cssText += `${i}:${v};`;
+          })
         }
       }
       return this;
     },
-    // Object.assign||$.extend功能，扩展对象
-    extend: function(obj1, obj2){
-      if (Object.assign) {
-        return Object.assign(obj1, obj2);
-      }else{
-        for(var i in obj2){
-          if (!obj1[i]) {
-            obj1[i] = obj2[i];
-          }
-        }
-        return obj1;
-      }
-    },
     // 压栈操作，$$parent保存父封装对象（使用end()可返回上一个封装对象）
     pushStack: function(dom){
-      return this.extend(myjQuery(dom), {'$$parent': this});
+      return myjQuery.extend(myjQuery(dom), {'$$parent': this});
     },
     end: function(){
       return this['$$parent'];
@@ -165,6 +150,117 @@
     // 获取父封装对象
     parent: function(){
       return this.pushStack(this[0].parentElement);
+    },
+    // 遍历：调用工具方法myjQuery.each
+    each: function(fn){
+      myjQuery.each(this, fn);
+    },
+    // 寻找匹配math封装对象
+    find: function(math){
+      if (!math) return;
+      return this.pushStack(math);
+    },
+    // 寻找当前集合下的第一个子封装对象
+    first: function(){
+      return myjQuery(this[0]);
+    },
+    // 寻找当前集合下的第number个子封装对象
+    eq: function(number){
+      console.log(this.length)
+      if (typeof number === undefined || number > this.length - 1) return this;
+      var number = number < 0 ? (this.length + number) : number;
+      return myjQuery(this[number]);
+    },
+    // 寻找当前集合下的最后一个子封装对象
+    last: function(){
+      return myjQuery(this[this.length - 1  ]);
+    },
+    // 同eq：寻找当前集合下的第number个子封装对象
+    get: function(number){
+      return this.eq(number);
+    },
+    // 获取或设置属性
+    attr: function(attr, val){
+      var _this = null;
+      if (!attr) return;
+      for (var i = 0; i < this.length; i++) {
+        if (myjQuery.isType(attr, 'String')) {
+          if (!val) {
+            return this[i].getAttribute(attr);
+          }
+          this[i].setAttribute(attr, val);
+        }else{
+          _this = this[i];
+          myjQuery.each(attr, function(v, i){
+            _this.setAttribute(i, v);
+          })
+        }
+      }
+      return this;
+    },
+    // 获取或设置数据
+    data: function(attr, val){
+      var _this = null;
+      if (!attr) return;
+      for (var i = 0; i < this.length; i++) {
+        if (myjQuery.isType(attr, 'String')) {
+          if (!val) {
+            return this[i].dataset[attr];
+          }
+          this[i].dataset[attr] = val;
+        }else{
+          _this = this[i];
+          myjQuery.each(attr, function(v, i){
+            _this.dataset[i] = v;
+          })
+        }
+      }
+      return this;
+    },
+    // 改变当前对象内容
+    html: function(val){
+      if (!val) {
+        return this[0].textContent;
+      }else{
+        for (var i = 0; i < this.length; i++) {
+          this[i].textContent = val;
+        }
+      }
+    },
+    // 添加子内容
+    append: function(val){
+      for (var i = 0; i < this.length; i++) {
+        this[i].insertAdjacentHTML('afterbegin', val);
+      }
+      return this;
+    },
+    // 在当前对象前添加内容
+    before: function(val){
+      for (var i = 0; i < this.length; i++) {
+        this[i].insertAdjacentHTML('beforebegin', val);
+      }
+      return this;
+    },
+    // 在当前对象后添加内容
+    after: function(val){
+      for (var i = 0; i < this.length; i++) {
+        this[i].insertAdjacentHTML('afterend', val);
+      }
+      return this;
+    },
+    // 删除当前对象
+    remove: function(){
+      for (var i = 0; i < this.length; i++) {
+        this[i].parentNode.removeChild(this[i]);
+      }
+    },
+    delegate: function(selector, type, fn){
+      this[0].addEventListener(type, function(e){
+        target = e.target;
+        if (selector.toLowerCase() && selector === e.nodeName.toLowerCase()) {
+          fn(target);
+        }
+      })
     }
   }
   // 工具方法
@@ -179,7 +275,88 @@
   // 转数组
   myjQuery.toArray = function(arr){
     return Array.prototype.slice.call(arr);
-  },
+  }
+  // 遍历
+  myjQuery.each = function(obj, fn){
+    if (!obj) return;
+    var i = 0;
+    if (typeof obj === 'object' && !obj['selector']) {
+      // 匹配：普通对象 || 数组 
+      for(i in obj){
+        fn.call(obj[i], obj[i], i);
+      }
+    }else{
+      for(;i < obj.length; i++){
+        fn.call(obj[i], myjQuery(obj[i]), i);
+      }
+    }
+  }
+  // Object.assign||$.extend功能，扩展对象，浅拷贝
+  myjQuery.extend = function(obj1, obj2){
+    if (Object.assign) {
+      return Object.assign(obj1, obj2);
+    }else{
+      for(var i in obj2){
+        obj1[i] = obj2[i];
+      }
+      return obj1;
+    }
+  }
+  // ajax
+  myjQuery.ajax = function(option){
+    if (!option.url) return;
+    // GET参数
+    var query = '',
+        arr = [],
+        defaultOption = {
+          url: '',
+          type: 'GET',
+          data: '',
+          success: '',
+          error: '',
+          complete: ''
+        };
+    myjQuery.extend(defaultOption, option);
+    // 格式化参数
+    if (defaultOption.data) {
+      for(var i in defaultOption.data){
+        arr.push(i + '=' + defaultOption.data[i])
+      }
+      query = arr.join('&&')
+    }
+
+    if (defaultOption.type === 'GET') {
+      defaultOption.url =defaultOption.url + '?' + query;
+    }
+
+    var xml = new XMLHttpRequest();
+    xml.open(defaultOption.type, defaultOption.url);
+    xml.onreadystatechange = function(){
+      if (xml.readyState == 4) {
+        if (this.status >= 200 && this.status < 400) {
+          defaultOption.success && defaultOption.success(JSON.parse(xml.responseText));
+        }else{
+          defaultOption.error && defaultOption.error(xml.responseText);
+        }
+      }
+    }
+
+    if (defaultOption.type === 'POST') {
+      xml.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    }
+
+    xml.send(query);
+    defaultOption.complete && defaultOption.complete();
+  }
+  // 判断数据类型
+  myjQuery.isType = function(val, type){
+    if (!val && !type) {
+      console.log('判断类型或判断值不能为空');
+      return;
+    };
+    var type = type.charAt(0).toUpperCase() + type.substring(1).toLowerCase();
+    return Object.prototype.toString.call(val).slice(8, -1) === type;
+  }
   // new myjQuery.prototype.init()后返回的是init构造的对象，它的原型上没有myjQuery.prototype的方法，需手动指定
   myjQuery.prototype.init.prototype = myjQuery.prototype;
   // 把构造函数挂载到window上
